@@ -15,17 +15,17 @@ def initialize_board():
 ]
     return ttt_board
 
-def display(b):
-    for row in b:
+def display(board):
+    for row in board:
         print("| " + " | ".join(row) + " |")
     print("-" * 13)
 
-def available_spaces(b):
+def available_spaces(board):
     available = []
 
     for row in range(3):
         for column in range(3):
-            if b[row][column] == '_':
+            if board[row][column] == '_':
                 # Convert 2D index to 1D position (1-9) / "flatten"
                 position = row * 3 + column + 1
                 available.append(str(position))
@@ -48,50 +48,50 @@ def join_or(options_list, separator = ', ', connector = 'or'):
             result += str(option) + separator
         return f"{result}{connector} {last_element}" 
 
-def convert_to_2d(position):
+def get_position_coords(position):
     row = position // 3 # integer division to get the row
     column = position % 3 # modulo to get the column
 
     return row, column
            
-def player_turn(b):
-    options = join_or(available_spaces(b))
+def player_turn(board):
+    options = join_or(available_spaces(board))
     prompt(f"Choose an available square number: {options}")
     player_choice = input()
 
-    while player_choice not in options:
+    while player_choice not in available_spaces(board):
         prompt("Please choose a valid option.")
         player_choice = input()
 
     #Convert the player's choice to 2D coordinates to fit a valid position in the list
     player_choice = int(player_choice) - 1 # Turn the choice into 0-based index
-    row, column = convert_to_2d(player_choice)
+    row, column = get_position_coords(player_choice)
     
     # Place the player's symbol on the board
-    b[row][column] = 'X'
+    board[row][column] = 'X'
 
-def check_for_threats(b):
+def check_for_threats(board):
     #check rows
     for row in range(3):
-        if b[row].count('X') == 2 and '_' in b[row]:
-            empty_position = b[row].index('_')
+        if board[row].count('X') == 2 and '_' in board[row]:
+            empty_position = board[row].index('_')
             return row, empty_position
         
     #check columns
     for column in range(3):
-        column_values = [b[row][column] for row in range(3)]
+        column_values = [board[row][column] for row in range(3)]
         if column_values.count('X') == 2 and '_' in column_values:
             empty_position = column_values.index('_')
             return  empty_position, column
     
     #check main diagonal
-    main_diagonal = [b[i][i] for i in range(3)]
+    main_diagonal = [board[i][i] for i in range(3)]
     if main_diagonal.count('X') == 2 and '_' in main_diagonal:
         empty_position = main_diagonal.index('_')
         return empty_position, empty_position
 
     #check anti-diagonal
-    anti_diagonal = [b[i][2-i] for i in range(3)]
+    anti_diagonal = [board[i][2-i] for i in range(3)]
     if anti_diagonal.count('X') == 2 and '_' in anti_diagonal:
         empty_position = anti_diagonal.index('_')
         return empty_position, 2 - empty_position
@@ -99,28 +99,28 @@ def check_for_threats(b):
     #if no threat is found
     return None
 
-def offensive_opportunity(b):
+def offensive_opportunity(board):
     #check rows
     for row in range(3):
-        if b[row].count('O') == 2 and '_' in b[row]:
-            empty_position = b[row].index('_')
+        if board[row].count('O') == 2 and '_' in board[row]:
+            empty_position = board[row].index('_')
             return row, empty_position
         
     #check columns
     for column in range(3):
-        column_values = [b[row][column] for row in range(3)]
+        column_values = [board[row][column] for row in range(3)]
         if column_values.count('O') == 2 and '_' in column_values:
             empty_position = column_values.index('_')
             return  empty_position, column
     
     #check main diagonal
-    main_diagonal = [b[i][i] for i in range(3)]
+    main_diagonal = [board[i][i] for i in range(3)]
     if main_diagonal.count('O') == 2 and '_' in main_diagonal:
         empty_position = main_diagonal.index('_')
         return empty_position, empty_position
 
     #check anti-diagonal
-    anti_diagonal = [b[i][2-i] for i in range(3)]
+    anti_diagonal = [board[i][2-i] for i in range(3)]
     if anti_diagonal.count('O') == 2 and '_' in anti_diagonal:
         empty_position = anti_diagonal.index('_')
         return empty_position, 2 - empty_position
@@ -128,50 +128,50 @@ def offensive_opportunity(b):
     #if no offensive opportunity is found
     return None
     
-def computer_turn(b):
+def computer_turn(board):
     #check for ofensive opportunities
-    if offensive_opportunity(b):
-        row, column = offensive_opportunity(b)
-        b[row][column] = 'O'
+    if offensive_opportunity(board):
+        row, column = offensive_opportunity(board)
+        board[row][column] = 'O'
     #check for threats
-    elif check_for_threats(b):
-        row, column = check_for_threats(b)
-        b[row][column] = 'O'
+    elif check_for_threats(board):
+        row, column = check_for_threats(board)
+        board[row][column] = 'O'
     else:
-        computer_choice = random.choice(available_spaces(b))
-        row, column = convert_to_2d(int(computer_choice) - 1)
+        computer_choice = random.choice(available_spaces(board))
+        row, column = get_position_coords(int(computer_choice) - 1)
     
-        b[row][column] = 'O'
+        board[row][column] = 'O'
     
-def winner(b):
+def winner(board):
     #check rows
     for row in range(3):
-        if b[row][0] == b[row][1] == b[row][2] and b[row][0] != '_':
-            return b[row][0] # return winning symbol
+        if board[row][0] == board[row][1] == board[row][2] and board[row][0] != '_':
+            return board[row][0] # return winning symbol
 
     #check columns
     for column in range(3):
-        if b[0][column] == b[1][column] == b[2][column] and b[0][column] != '_':
-            return  b[0][column]
+        if board[0][column] == board[1][column] == board[2][column] and board[0][column] != '_':
+            return  board[0][column]
 
     #check diagonal
-    if b[0][0] == b[1][1] == b[2][2] and b[0][0] != '_':
-        return b[0][0]
+    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != '_':
+        return board[0][0]
 
     #check anti-diagonal
-    if b[0][2] == b[1][1] == b[2][0] and b[0][2] != '_':
-        return b[2][0]
+    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != '_':
+        return board[2][0]
 
     #No winner yet
     return False
 
-def is_tie(b):
-    return all(square != '_' for row in b for square in row)
+def is_tie(board):
+    return all(square != '_' for row in board for square in row)
 
-def game_status(b):
-    if winner(b):
-        return f"The winner is {winner(b)}"
-    elif is_tie(b):
+def game_status(board):
+    if winner(board):
+        return f"The winner is {winner(board)}"
+    elif is_tie(board):
         return "It's a tie"
     
     return None #Game continues
