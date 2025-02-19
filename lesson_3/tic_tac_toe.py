@@ -90,7 +90,7 @@ def offensive_and_defensive_moves(board):
     If available, the function returns the board position for the move.    
     """
     #check rows
-    for marker in [PLAYER_MARKER, COMPUTER_MARKER]:
+    for marker in [COMPUTER_MARKER, PLAYER_MARKER]:
         for row in range(3):
             if board[row].count(marker) == 2 and EMPTY_SQUARE in board[row]:
                 empty_position = board[row].index(EMPTY_SQUARE)
