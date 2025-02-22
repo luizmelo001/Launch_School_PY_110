@@ -1,208 +1,143 @@
 import random
 
-PLAYER_SYMBOLS = ['X', 'O']
-EMPTY_SQUARE = '_'
-MAX_ROUNDS = 5
+SUITS = ('H', 'D', 'S', 'C')
+VALUES = ('2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A')
 
-def prompt(text):
-    print(f"=> {text}")
+def prompt(message):
+    print(f"=> {message}")
 
+def initialize_deck():
+    deck = [f"{value}{suit}" for value in VALUES for suit in SUITS]
+    random.shuffle(deck)
+    return deck
 
-def initialize_board():
-    ttt_board = [ 
-    ["_","_","_"], 
-    ["_","_","_"], 
-    ["_","_","_"]
-]
-    return ttt_board
+def total(cards):
+    sum_val = 0
 
-def display(board):
-    for row in board:
-        print("| " + " | ".join(row) + " |")
-    print("-" * 13)
+    for card in cards:
+        value = card[:-1]
 
-def available_spaces(board):
-    available = []
-
-    for row in range(3):
-        for column in range(3):
-            if board[row][column] == EMPTY_SQUARE:
-                # Convert 2D index to 1D position (1-9) / "flatten"
-                position = row * 3 + column + 1
-                available.append(str(position))
-    return available
-
-def join_or(options_list, separator = ', ', connector = 'or'):
-    if not options_list:
-        return ''
-    
-    lst = options_list[:-1]
-    last_element = str(options_list[-1])
-    result = ''
-
-    if len(options_list) == 1:
-        return str(options_list[0])
-    elif len(options_list) == 2:
-        return f"{options_list[0]} {connector} {options_list[1]}"
-    else:
-        for option in lst:
-            result += str(option) + separator
-        return f"{result}{connector} {last_element}" 
-
-def get_position_coords(position):
-    row = position // 3 # integer division to get the row
-    column = position % 3 # modulo to get the column
-
-    return row, column
-           
-def player_turn(board):
-    options = join_or(available_spaces(board))
-    prompt(f"Choose an available square number: {options}")
-    player_choice = input()
-
-    while player_choice not in available_spaces(board):
-        prompt("Please choose a valid option.")
-        player_choice = input()
-
-    #Convert the player's choice to 2D coordinates to fit a valid position in the list
-    player_choice = int(player_choice) - 1 # Turn the choice into 0-based index
-    row, column = get_position_coords(player_choice)
-    
-    # Place the player's symbol on the board
-    board[row][column] = 'X'
-
-def offensive_and_defensive_moves(board):
-    #check rows
-    for marker in PLAYER_SYMBOLS:
-        for row in range(3):
-            if board[row].count(marker) == 2 and EMPTY_SQUARE in board[row]:
-                empty_position = board[row].index(EMPTY_SQUARE)
-                return row, empty_position
-            
-        #check columns
-        for column in range(3):
-            column_values = [board[row][column] for row in range(3)]
-            if column_values.count(marker) == 2 and EMPTY_SQUARE in column_values:
-                empty_position = column_values.index(EMPTY_SQUARE)
-                return  empty_position, column
-        
-        #check main diagonal
-        main_diagonal = [board[i][i] for i in range(3)]
-        if main_diagonal.count(marker) == 2 and EMPTY_SQUARE in main_diagonal:
-            empty_position = main_diagonal.index(EMPTY_SQUARE)
-            return empty_position, empty_position
-
-        #check anti-diagonal
-        anti_diagonal = [board[i][2-i] for i in range(3)]
-        if anti_diagonal.count(marker) == 2 and EMPTY_SQUARE in anti_diagonal:
-            empty_position = anti_diagonal.index('_')
-            return empty_position, 2 - empty_position
-
-    #if no threat is found
-    return None
-
-def computer_turn(board):
-    #check for ofensive opportunities or threats
-    if offensive_and_defensive_moves(board):
-        row, column = offensive_and_defensive_moves(board)
-        board[row][column] = 'O'
-    else:
-        computer_choice = random.choice(available_spaces(board))
-        row, column = get_position_coords(int(computer_choice) - 1)
-        board[row][column] = 'O'
-    
-def winner(board):
-    #check rows
-    for row in range(3):
-        if board[row][0] == board[row][1] == board[row][2] and board[row][0] != EMPTY_SQUARE:
-            return board[row][0] # return winning symbol
-
-    #check columns
-    for column in range(3):
-        if board[0][column] == board[1][column] == board[2][column] and board[0][column] != EMPTY_SQUARE:
-            return  board[0][column]
-
-    #check diagonal
-    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != EMPTY_SQUARE:
-        return board[0][0]
-
-    #check anti-diagonal
-    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != EMPTY_SQUARE:
-        return board[2][0]
-
-    #No winner yet
-    return False
-
-def is_tie(board):
-    return all(square != EMPTY_SQUARE for row in board for square in row)
-
-def game_status(board):
-    if winner(board):
-        return f"The winner is {winner(board)}"
-    elif is_tie(board):
-        return "It's a tie"
-    return None #Game continues
-
-def take_turn(board, player):
-    if player == 'X':
-        player_turn(board)
-    else:
-        computer_turn(board)
-    display(board)
-    return game_status(board)
-
-def get_valid_input(prompt_message, valid_choices):
-    while True:
-        user_input = input(prompt_message).lower()
-        if user_input in valid_choices:
-            return user_input
-        prompt(f"That is not a valid choice. Plase choose from: {', '.join(valid_choices)}")
-    
-def wants_to_play_gain():
-    return get_valid_input("Play again? Press y for 'yes' and 'n' for no", ['y', 'n']) == 'y'
-         
-def play_tic_tac_toe():
-    computer_score = 0
-    player_score = 0
-
-    while True:
-        prompt("Welcome to Tic Tac Toe")
-        board = initialize_board()
-        display(board)
-        prompt(f"Player score: {player_score} - Computer score: {computer_score}")
-        prompt("Who should go first?\n Press 'c' for Computer or 'h' for Human")
-        first_move = input().lower()
-
-        while first_move not in ['c', 'h']:
-            prompt("That is not a valid choice.\n Press 'c' for Computer or 'h' for Human")
-            first_move = input().lower()
-
-        if first_move == 'h':
-            current_player = 'X'
+        if value == "A":
+            sum_val += 11
+        elif value in ['J', 'Q', 'K']:
+            sum_val += 10
         else:
-            prompt("Computer goes first.")
-            current_player = 'O'
-        while True:
-            result = take_turn(board, current_player)
-            
-            if result:
-                prompt(result)
-                if winner(board) == 'X':
-                    player_score += 1
-                elif winner(board) == 'O':
-                    computer_score += 1
-                break
-            current_player = 'O' if current_player == 'X' else 'X'
+            sum_val += int(value)
 
-        if (computer_score + player_score) == MAX_ROUNDS or computer_score == 3 or player_score == 3:
-            if player_score > computer_score:
-                prompt("Human player wins!!!")
-            else:
-                prompt("Computer wins!!!")
+    # Correct for Aces
+    for card in cards:
+        value = card[:-1]
+        if sum_val <= 21:
+            break
+        if value == "A":
+            sum_val -= 10
 
-        if not wants_to_play_gain():
+    return sum_val
+
+def busted(cards):
+    return total(cards) > 21
+
+def detect_result(dealer_cards, player_cards):
+    player_total = total(player_cards)
+    dealer_total = total(dealer_cards)
+
+    if player_total > 21:
+        return 'PLAYER_BUSTED'
+    elif dealer_total > 21:
+        return 'DEALER_BUSTED'
+    elif dealer_total < player_total:
+        return 'PLAYER'
+    elif dealer_total > player_total:
+        return 'DEALER'
+    else:
+        return 'TIE'
+
+def display_results(dealer_cards, player_cards):
+    result = detect_result(dealer_cards, player_cards)
+
+    match result:
+        case 'PLAYER_BUSTED':
+            prompt('You busted! Dealer wins!')
+        case 'DEALER_BUSTED':
+            prompt('Dealer busted! You win!')
+        case 'PLAYER':
+            prompt('You win!')
+        case 'DEALER':
+            prompt('Dealer wins!')
+        case _:
+            prompt("It's a tie!")
+
+
+def play_again():
+    print("-------------")
+    answer = input('Do you want to play again? (y or n) ')
+    return answer == 'y'
+
+def pop_two_from_deck(deck):
+    return [deck.pop(), deck.pop()]
+
+def hand(cards):
+    return ', '.join(cards)
+
+while True:
+    prompt('Welcome to Twenty-One!')
+
+     # initial deal
+    deck = initialize_deck()
+    player_cards = pop_two_from_deck(deck)
+    dealer_cards = pop_two_from_deck(deck)
+
+
+    prompt(f"Dealer has {dealer_cards[0]} and ?")
+    prompt(f"You have: {player_cards[0]} and {player_cards[1]}, for a total of {total(player_cards)}.")
+
+    # player turn
+    while True:
+        player_choice = input("Would you like to (h)it or (s)tay? ")
+        if player_choice not in ['h', 's']:
+            prompt("Sorry, must enter 'h' or 's'.")
+            continue
+
+        if player_choice == 'h':
+            player_cards.append(deck.pop())
+            prompt('You chose to hit!')
+            prompt(f"Your cards are now: {hand(player_cards)}")
+            prompt(f"Your total is now: {total(player_cards)}")
+
+        if player_choice == 's' or busted(player_cards):
             break
 
-    prompt("Thanks for playing!")
+    if busted(player_cards):
+        display_results(dealer_cards, player_cards)
+        if play_again():
+            continue
+    else:
+        prompt(f"You stayed at {total(player_cards)}")
 
-play_tic_tac_toe()
+    # dealer turn
+    prompt("Dealer's turn...")
+
+    while total(dealer_cards) < 17:
+        prompt("Dealer hits!")
+        dealer_cards.append(deck.pop())
+        prompt(f"Dealer's cards are now: {hand(dealer_cards)}")
+
+    if busted(dealer_cards):
+        prompt(f"Dealer total is now: {total(dealer_cards)}")
+        display_results(dealer_cards, player_cards)
+        if play_again():
+            continue
+    else:
+        prompt(f"Dealer stays at {total(dealer_cards)}")
+
+    # both player and dealer stays - compare cards!
+
+    print('==============')
+    prompt(f"Dealer has {hand(dealer_cards)}, for a total of: {total(dealer_cards)}")
+    prompt(f"Player has {hand(player_cards)}, for a total of: {total(player_cards)}")
+    print('==============')
+
+    display_results(dealer_cards, player_cards)
+
+    if not play_again():
+        break
